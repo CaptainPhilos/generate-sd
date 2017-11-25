@@ -15,24 +15,23 @@
 
 # globals ################################################################
 
-WORKING_DIR="./work"
 ORIGINAL_RETROPIE_IMAGE=
 GAME_IMAGE=
-RESULT_IMAGE=$WORKING_DIR+"/result.img"
+RESULT_IMAGE="result.img"
 
 function prepare_image() {
   if [[ -z $ORIGINAL_RETROPIE_IMAGE ]]; then
-    exitonerror_nothingmade "Aucune image de Retropie fournie"
+    exitonerror_nothingmade "Pas d'image Retropie en entrée"
   fi
   if ! [[ -f $ORIGINAL_RETROPIE_IMAGE ]]; then
-    exitonerror_nothingmade "Le fichier image Retropie fourni n'exite pas"
+    exitonerror_nothingmade "Le fichier image Retropie d'entrée est introuvable"
   fi
 
   if [[ -z $RESULT_IMAGE ]]; then
-    exitonerror_nothingmade "Aucun nom de fichier résultat fourni"
+    exitonerror_nothingmade "Pas d'image de destination"
   fi
 
-  # Prepare target image 
+  # Prepare target image
   rm $RESULT_IMAGE
   cp $ORIGINAL_RETROPIE_IMAGE $RESULT_IMAGE
   if ! [[ -f $RESULT_IMAGE ]]; then
@@ -45,7 +44,7 @@ function prepare_image() {
 
 function exitonerror_nothingmade() {
   local errormsg=$1
-  
+
   echo "ERROR : " $errormsg
   exit 1
 }
@@ -66,7 +65,7 @@ function get_options() {
   do
     echo "getopts OPTIND=$OPTIND, Option=$option, OPTARG=$OPTARG, OPTERR=$OPTERR"
     case "$option" in
-      
+
       #Input Retropie Image
       i)
         ORIGINAL_RETROPIE_IMAGE=$OPTARG
@@ -113,4 +112,3 @@ get_options "$@"
 prepare_image
 
 exit 0
- 
