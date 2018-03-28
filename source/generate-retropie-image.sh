@@ -18,7 +18,11 @@
 ORIGINAL_RETROPIE_IMAGE=
 GAME_IMAGE=
 RESULT_IMAGE="out.img"
-MOUNT_PATH="/mnt/loop0p2"
+
+MOUNT_BOOT_PATH=
+MAPPER_BOOT_PATH=
+MOUNT_RETROPIE_PATH=
+MAPPER_RETROPIE_PATH=
 
 DEBUG=
 
@@ -35,6 +39,11 @@ function install_prerequesites() {
 # Image file Management #######################################################
 
 function prepare_image() {
+
+  if ! [[ -z $DEBUG ]]; then
+    echo "Prepare Image"
+  fi
+
   if [[ -z $ORIGINAL_RETROPIE_IMAGE ]]; then
     exitonerror_nothingmade "Pas d'image Retropie en entrée"
   fi
@@ -48,12 +57,12 @@ function prepare_image() {
 
   # Duplicate the original image file into destination image file
 
-  if ! [[ -z $DEBUG ]] && [[ -f $ORIGINAL_RETROPIE_IMAGE ]]; then
-    echo "Debug = ON. Le fichier de résultat existe déjà donc pas de copie"
-  else
+  if [[ -f $RESULT_IMAGE ]]; then
+    echo "Suppression de l'ancienne image résultat $RESULT_IMAGE"
     rm $RESULT_IMAGE
-    cp $ORIGINAL_RETROPIE_IMAGE $RESULT_IMAGE
   fi
+  echo "Copie de $ORIGINAL_RETROPIE_IMAGE vers $RESULT_IMAGE"
+  cp $ORIGINAL_RETROPIE_IMAGE $RESULT_IMAGE
 
   # check if result file is present
 
@@ -68,18 +77,80 @@ function prepare_image() {
 
 function mount_image() {
 
-  KPARTX_COMMAND=$(sudo kpartx -av ${RESULT_IMAGE})
-  echo $KPARTX_COMMAND
-  sudo mkdir -v ${MOUNT_PATH} 2> /dev/null
-  sudo mount /dev/mapper/loop0p2 ${MOUNT_PATH}
+  if ! [[ -z $DEBUG ]]; then
+    echo "Mount Image"
+  fi
+
+  ROOT_LOOP=$(sudo kpartx -av ${RESULT_IMAGE} | grep -o 'loop[0-9]' | head -n 1)
+
+  if ! [[ -z $DEBUG ]]; then
+    echo "Mapper = $ROOT_LOOP"
+  fi
+
+  if [[ -z $ROOT_LOOP ]]; then
+    exitonerror_cleanneeded "Kpartx n'a pas retourné de mapper correct : $ROOT_LOOP reçu, 'loop%p%' attendu"
+  fi
+
+  MOUNT_BOOT_PATH="/mnt/$ROOT_LOOP"
+  MOUNT_BOOT_PATH+="p1"
+  MAPPER_BOOT_PATH="/dev/mapper/$ROOT_LOOP"
+  MAPPER_BOOT_PATH+="p1"
+  MOUNT_RETROPIE_PATH="/mnt/$ROOT_LOOP"
+  MOUNT_RETROPIE_PATH+="p2"
+  MAPPER_RETROPIE_PATH="/dev/mapper/$ROOT_LOOP"
+  MAPPER_RETROPIE_PATH+="p2"
+  if ! [[ -z $DEBUG ]]; then
+    echo "MOUNT_BOOT_PATH = $MOUNT_BOOT_PATH"
+    echo "MAPPER_BOOT_PATH = $MAPPER_BOOT_PATH"
+    echo "MOUNT_RETROPIE_PATH = $MOUNT_RETROPIE_PATH"
+    echo "MAPPER_RETROPIE_PATH = $MAPPER_RETROPIE_PATH"
+  fi
+  sudo mkdir -v ${MOUNT_BOOT_PATH}
+#  sudo mkdir -v ${MOUNT_BOOT_PATH} 2> /dev/null
+#  while ! [[ -f ${MAPPER_BOOT_PATH} ]]; do
+  if ! [[ -L ${MAPPER_BOOT_PATH} ]]; then
+    echo "${MAPPER_BOOT_PATH} n'existe pas"
+  fi
+  sudo mount ${MAPPER_BOOT_PATH} ${MOUNT_BOOT_PATH}
+#  MOUNT_OK=$(ls -A ${MOUNT_BOOT_PATH} | wc -c)
+  MOUNT_OK=$?
+  echo "MOUNT_OK=$MOUNT_OK"
+  if [[ $MOUNT_OK -eq 0 ]]; then
+    echo "${MOUNT_BOOT_PATH} est vide"
+  fi
+
+  sudo mkdir -v ${MOUNT_RETROPIE_PATH}
+#  sudo mkdir -v ${MOUNT_RETROPIE_PATH} 2> /dev/null
+  if ! [[ -L ${MAPPER_RETROPIE_PATH} ]]; then
+    echo "${MAPPER_RETROPIE_PATH} n'existe pas"
+  fi
+  sudo mount ${MAPPER_RETROPIE_PATH} ${MOUNT_RETROPIE_PATH}
+  MOUNT_OK=$?
+#  MOUNT_OK=$(ls -A ${MOUNT_RETROPIE_PATH} | wc -c)
+  echo "MOUNT_OK=$MOUNT_OK"
+  if [[ $MOUNT_OK -eq 0 ]]; then
+    echo "${MOUNT_RETROPIE_PATH} est vide"
+  fi
 
 }
 
 function umount_image() {
 
-  sudo umount ${MOUNT_PATH}
-  sudo rm -rf ${MOUNT_PATH}
-  sudo kpartx -d ${RESULT_IMAGE}
+  if ! [[ -z $DEBUG ]]; then
+    echo "Unmount Image"
+  fi
+
+  if ! [[ -z $MOUNT_BOOT_PATH ]]; then
+    sudo umount ${MOUNT_BOOT_PATH}
+    sudo rm -rf ${MOUNT_BOOT_PATH}
+  fi
+  if ! [[ -z $MOUNT_RETROPIE_PATH ]]; then
+    sudo umount ${MOUNT_RETROPIE_PATH}
+    sudo rm -rf ${MOUNT_RETROPIE_PATH}
+  fi
+  if ! [[ -z $RESULT_IMAGE ]]; then
+    sudo kpartx -d ${RESULT_IMAGE}
+  fi
 }
 
 # Error Management #######################################################
@@ -88,6 +159,14 @@ function exitonerror_nothingmade() {
   local errormsg=$1
 
   echo "ERROR : " $errormsg
+  exit 1
+}
+
+function exitonerror_cleanneeded() {
+  local errormsg=$1
+
+  echo "ERROR : " $errormsg
+  umount_image
   exit 1
 }
 
@@ -105,7 +184,7 @@ function get_options() {
 
   while getopts "i:o:dh" option ;
   do
-    if [[ -z $DEBUG ]]; then
+    if [[ ! -z $DEBUG ]]; then
       echo "getopts OPTIND=$OPTIND, Option=$option, OPTARG=$OPTARG, OPTERR=$OPTERR"
     fi
     case "$option" in
