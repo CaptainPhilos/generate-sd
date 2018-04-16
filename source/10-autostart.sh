@@ -31,7 +31,7 @@ core_name=
 game_name=
 
 # controller configuration
-controller_config_ext="cfg"
+CONTROLLER_CONFIG_EXT="cfg"
 controller_config_filename=
 
 # Error Management #######################################################
@@ -110,12 +110,15 @@ function extract_game_name() {
   fi
 
   find ${game_directory}/* -type f | while read file; do
+
+    # TO DO : Test that the file has an extension
+
     extension=${file##*.};
     trace "Extension found : ${extension}"
 
     case "$extension" in
 
-      ${controller_config_ext})
+      ${CONTROLLER_CONFIG_EXT})
         controller_config_filename=${file}
         trace "Controller configuration file found = ${controller_config_filename}"
       ;;
