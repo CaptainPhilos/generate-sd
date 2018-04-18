@@ -15,10 +15,16 @@
 # - Linux OS
 ##########################################################################
 
+# constantes #############################################################
+
+CONTROLLER_CONFIG_EXT="cfg"
+GAME_CUE_EXT="cue"
+
+MACHINE_NEED_CUE="pcengine"
 
 # globals ################################################################
 
-DEBUG=
+debug=
 
 root_usb_key="/Volumes/ROMS"
 #root_usb_key = "/media/usb0/"
@@ -30,8 +36,7 @@ core_name=
 # name of the game
 game_name=
 
-# controller configuration
-CONTROLLER_CONFIG_EXT="cfg"
+# controller file
 controller_config_filename=
 
 # Error Management #######################################################
@@ -39,8 +44,8 @@ controller_config_filename=
 function trace() {
   local tracemsg=$1
 
-  if ! [[ -z $DEBUG ]]; then
-    echo "[DEBUG] " $tracemsg
+  if ! [[ -z $debug ]]; then
+    echo "[debug] " $tracemsg
   fi
 }
 
@@ -109,25 +114,52 @@ function extract_game_name() {
     exitonerror "Le répertoire de la machine ${game_directory} ne contient pas les bons fichiers : fichier du jeu (parfois 2) + la configuration des Controllers"
   fi
 
-  find ${game_directory}/* -type f | while read file; do
+  trace "Controller configuration verification = ${controller_config_filename}"
+  trace "Game file verification = ${game_name}"
 
-    # TO DO : Test that the file has an extension
+  find "${game_directory}"/* -type f | while read file; do
 
-    extension=${file##*.};
-    trace "Extension found : ${extension}"
+    trace "Controller configuration verification = ${controller_config_filename}"
+    trace "Game file verification = ${game_name}"
 
-    case "$extension" in
+    local onlyFileName=$(basename ${file})
+    local extension=${onlyFileName: -3}
+    extension=$(echo $extension | tr [:upper:] [:lower:])
+    trace "file gotten : ${onlyFileName}"
+    trace "extension gotten : ${extension}"
 
+    case ${extension} in
+
+      # controller configuration file
       ${CONTROLLER_CONFIG_EXT})
         controller_config_filename=${file}
         trace "Controller configuration file found = ${controller_config_filename}"
-      ;;
-      *)
-        game_name=${file}
-        trace "Game file found = ${game_name}"
-      ;;
+        ;;
+
+      # cue file for an ISO game
+      # deponds on the machine
+      ${GAME_CUE_EXT})
+
+        # if it's a CUE file, check that it's compatible with the current machine
+        trace "Actual core name = ${core_name}"
+        trace "Searched in = ${MACHINE_NEED_CUE}"
+        echo '${MACHINES_NEED_CUE}'
+        echo "${MACHINES_NEED_CUE}" | grep "${core_name}" > /dev/null 2>&1
+        echo "${MACHINES_NEED_CUE}" | grep "${core_name}" | wc -l
+        check_if_machine_need_cue=$(echo "${MACHINES_NEED_CUE}" | grep "${core_name}" | wc -l)
+        trace "Machine Need Cue ? = ${check_if_machine_need_cue}"
+
+#        if [[ "${check_if_machine_need_cue}" -eq 0 ]]; then
+#          game_name=${file}
+#          trace "Game file found = ${game_name}"
+#        fi
+        ;;
+
 
     esac
+
+    trace "Controller configuration verification = ${controller_config_filename}"
+    trace "Game file verification = ${game_name}"
 
   done
 }
@@ -172,8 +204,8 @@ function get_options() {
 #        ;;
 
       d)
-        DEBUG="ON"
-        trace "Debug mode = ON"
+        debug="ON"
+        trace "debug mode = ON"
         ;;
 
       #Invalid Option
