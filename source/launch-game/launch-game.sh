@@ -6,6 +6,8 @@
 # The game to start is found in a USB key installed on the raspberry
 # The directory structure of the key MUST be always the same :
 #   /
+#     bin
+#       launch-game.sh
 #     roms
 #       MACHINE_NAME
 #         GAME (extension depends on the kind of machine)
@@ -27,9 +29,9 @@ MACHINE_NEED_CUE="pcengine"
 debug=
 
 root_usb_key="/Volumes/ROMS"
-#root_usb_key = "/media/usb0/"
+#root_usb_key="/media/usb0"
 root_roms="roms"
-#system_list="/etc/remulation/es_systems.cfg"
+#system_list="/etc/emulationstation/es_systems.cfg"
 system_list="/Volumes/ROMS/roms/es_systems.cfg"
 
 # Name of the core that will be launched
@@ -139,7 +141,7 @@ function extract_game_name() {
   if [[ -z ${files_in_directory} ]]; then
     exitonerror "Le répertoire de la machine ${game_directory} est vide"
   fi
-  if [ $nb_files_in_directory -lt 2 ]; then
+  if [ $nb_files_in_directory -lt 1 ]; then
     exitonerror "Le répertoire de la machine ${game_directory} ne contient pas les bons fichiers : fichier du jeu (parfois 2) + la configuration des Controllers"
   fi
 
