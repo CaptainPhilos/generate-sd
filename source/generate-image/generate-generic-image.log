@@ -1,0 +1,36 @@
+[Tue May 8 20:42:59 UTC 2018][DEBUG] getopts OPTIND=3, Option=i, OPTARG=retropie-4.3-rpi2_rpi3.img, OPTERR=1
+[Tue May 8 20:42:59 UTC 2018][DEBUG] Le fichier d'entrée est retropie-4.3-rpi2_rpi3.img
+[Tue May 8 20:42:59 UTC 2018][DEBUG] ##########################
+[Tue May 8 20:42:59 UTC 2018][DEBUG] prepare_image ############
+[Tue May 8 20:42:59 UTC 2018][DEBUG] Suppression de l'ancienne image résultat out.img
+[Tue May 8 20:42:59 UTC 2018][DEBUG] Copie de retropie-4.3-rpi2_rpi3.img vers out.img
+[Tue May 8 20:43:10 UTC 2018][DEBUG] L'image de destination out.img a été corectement générée
+[Tue May 8 20:43:10 UTC 2018][DEBUG] ##########################
+[Tue May 8 20:43:10 UTC 2018][DEBUG] mount_image ##############
+[Tue May 8 20:43:10 UTC 2018][DEBUG] Association de /dev/loop0 avec l'image out.img
+[Tue May 8 20:43:10 UTC 2018][DEBUG] Création du répertoire de travail work
+[Tue May 8 20:43:10 UTC 2018][DEBUG] Montage de /dev/loop0p2 sur work
+[Tue May 8 20:43:21 UTC 2018][DEBUG] Montage de /dev/loop0p1 sur work/boot
+[Tue May 8 20:43:27 UTC 2018][DEBUG] ##########################
+[Tue May 8 20:43:27 UTC 2018][DEBUG] create_SD ################
+[Tue May 8 20:43:27 UTC 2018][DEBUG] Apply modifications to work/boot/cmdline.txt
+[Tue May 8 20:43:27 UTC 2018][DEBUG] replace console=tty1 by logo.nologo loglevel=3 vt.global_cursor_default=0 in file work/boot/cmdline.txt
+[Tue May 8 20:43:27 UTC 2018][DEBUG] *Sed Command : 0,/console=tty1/ s//logo.nologo loglevel=3 vt.global_cursor_default=0/
+[Tue May 8 20:43:27 UTC 2018][DEBUG] Apply modifications to work/boot/config.txt
+[Tue May 8 20:43:27 UTC 2018][DEBUG] uncomment disable_overscan=1
+[Tue May 8 20:43:27 UTC 2018][DEBUG] add disable_splash=1
+[Tue May 8 20:43:27 UTC 2018][DEBUG] add plymouth.enable=0
+[Tue May 8 20:43:27 UTC 2018][DEBUG] Apply modifications to work/opt/retropie/configs/all/runcommand.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] replace disable_joystick=0 by disable_joystick=1 in file work/opt/retropie/configs/all/runcommand.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] replace disable_menu=0 by disable_menu=1 in file work/opt/retropie/configs/all/runcommand.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] Apply modifications to work/opt/retropie/emulators/retroarch/retroarch.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] uncomment video_font_enable and set to false in file work/opt/retropie/emulators/retroarch/retroarch.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] Apply modifications to work/opt/retropie/configs/all/retroarch.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] uncomment video_font_enable and set to false in file work/opt/retropie/configs/all/retroarch.cfg
+[Tue May 8 20:43:27 UTC 2018][DEBUG] No Splash Screen. Remove work/etc/splashscreen.list
+[Tue May 8 20:43:29 UTC 2018][DEBUG] ##########################
+[Tue May 8 20:43:29 UTC 2018][DEBUG] umount_image #############
+[Tue May 8 20:43:29 UTC 2018][DEBUG] Démontage de /dev/loop0p1
+[Tue May 8 20:43:29 UTC 2018][DEBUG] Démontage de /dev/loop0p2
+[Tue May 8 20:43:29 UTC 2018][DEBUG] Suppression du répertoire de travail work
+[Tue May 8 20:43:29 UTC 2018][DEBUG] Désassociation du périphérique /dev/loop0 et de l'image out.img

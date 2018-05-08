@@ -12,7 +12,7 @@
 #
 
 DEBUG=
-ROOT_LOOP=
+root_directory=
 
 # Directories for mounted volumes.
 root_path_mounted_volumes="/mnt"
@@ -46,11 +46,11 @@ function usage() {
 
 # Directories Management
 
-function set_mappers() {
+function set_directories() {
 
-  root_path_boot="$root_path_mounted_volumes/$ROOT_LOOP"
+  root_path_boot="$root_path_mounted_volumes/$root_directory"
   root_path_boot+="p1"
-  root_path_retropie="$root_path_mounted_volumes/$ROOT_LOOP"
+  root_path_retropie="$root_path_mounted_volumes/$root_directory"
   root_path_retropie+="p2"
   if [[ -z $root_path_boot ]]; then
     exitonerror_nothingmade "Le mapper root_path_boot est vide"
@@ -100,19 +100,19 @@ function get_options() {
     fi
     case "$option" in
 
-      #Input Retropie Image
+      #Input Retropie Directories
       l)
-        ROOT_LOOP=$OPTARG
-        echo "Le mapper est $ROOT_LOOP"
-        set_mappers
+        root_directory=$OPTARG
+        trace "Le répertoire Retropie est ${root_directory}"
+        set_directories
 	      ;;
 
       #Source Directory
-      s)
-        source_directory=$OPTARG
-        echo "Le répertoire des sources est $source_directory"
-        set_directories
-	      ;;
+      #s)
+      #  source_directory=$OPTARG
+      #  echo "Le répertoire des sources est $source_directory"
+      #  set_directories
+	    #  ;;
 
       #Missing Arguments
       :)
