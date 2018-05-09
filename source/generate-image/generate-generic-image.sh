@@ -11,8 +11,8 @@
 
 # Constants ############################################################
 
-LOOP0="/dev/loop0"
-WORKING_DIRECTORY="work"
+LOOP0="/dev/loop20"
+WORKING_DIRECTORY="work_temp"
 BOOT_DIRECTORY="${WORKING_DIRECTORY}/boot"
 
 # globals ################################################################
@@ -226,7 +226,7 @@ function create_SD () {
   # boot/cmdline.txt
   #
   local filename="${BOOT_DIRECTORY}/cmdline.txt"
-  trace "Apply modifications to ${filename}"
+  trace "** Apply modifications to ${filename}"
 
   # replace "console=tty1" by "logo.nologo loglevel=3 vt.global_cursor_default=0"
   local pattern_to_remove="console=tty1"
@@ -234,14 +234,13 @@ function create_SD () {
 
   #command : sed '0,/tata/ s//zaza/' in.txt
   trace "replace ${pattern_to_remove} by ${pattern_to_add} in file ${filename}"
-  trace "*Sed Command : 0,/${pattern_to_remove}/ s//${pattern_to_add}/"
   sudo sed -i '0,/'"${pattern_to_remove}"'/ s//'"${pattern_to_add}"'/' ${filename}
 
   #
   # boot/config.txt
   #
   filename="${BOOT_DIRECTORY}/config.txt"
-  trace "Apply modifications to ${filename}"
+  trace "** Apply modifications to ${filename}"
 
   # uncomment "disable_overscan=1"
   trace "uncomment disable_overscan=1"
@@ -259,7 +258,7 @@ function create_SD () {
   # retropie/opt/retropie/configs/all/runcommand.cfg
   #
   filename="${WORKING_DIRECTORY}/opt/retropie/configs/all/runcommand.cfg"
-  trace "Apply modifications to ${filename}"
+  trace "** Apply modifications to ${filename}"
 
   # add "disable_joystick=1"
   trace "replace disable_joystick=0 by disable_joystick=1 in file ${filename}"
@@ -273,7 +272,7 @@ function create_SD () {
   # retropie/opt/retropie/emulators/retroarch/retroarch.cfg
   #
   filename="${WORKING_DIRECTORY}/opt/retropie/emulators/retroarch/retroarch.cfg"
-  trace "Apply modifications to ${filename}"
+  trace "** Apply modifications to ${filename}"
 
   # uncomment and set to false "video_font_enable=false"
   trace "uncomment video_font_enable and set to false in file ${filename}"
@@ -284,7 +283,7 @@ function create_SD () {
   # retropie/opt/retropie/configs/all/retroarch.cfg
   #
   filename="${WORKING_DIRECTORY}/opt/retropie/configs/all/retroarch.cfg"
-  trace "Apply modifications to ${filename}"
+  trace "** Apply modifications to ${filename}"
 
   # uncomment and set to false "video_font_enable=false"
   trace "uncomment video_font_enable and set to false in file ${filename}"
