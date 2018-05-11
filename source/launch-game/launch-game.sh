@@ -20,7 +20,6 @@
 # Verify that it's a retropie
 function check_computer() {
   local computer=$(uname -a)
-  trace "Computer : ${computer}"
 
   if echo "${computer}" | grep -q "retropie"; then
     retropie_computer="OK"

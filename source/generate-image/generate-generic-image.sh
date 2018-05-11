@@ -14,6 +14,7 @@
 LOOP0="/dev/loop20"
 WORKING_DIRECTORY="work_temp"
 BOOT_DIRECTORY="${WORKING_DIRECTORY}/boot"
+AUTOLAUNCH_SCRIPT_FILENAME="10-retropie.sh"
 
 # globals ################################################################
 
@@ -296,6 +297,35 @@ function create_SD () {
   filename="${WORKING_DIRECTORY}/etc/splashscreen.list"
   trace "No Splash Screen. Remove ${filename}"
   sudo rm ${filename}
+
+  #
+  # autolaunch.sh installation
+  #
+  filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/"
+  sudo cp ${filename} "${WORKING_DIRECTORY}/etc/profile.d/"
+
+  #
+  # enable ssh by default
+  #
+  filename="${BOOT_DIRECTORY}/ssh"
+  trace "touch ${filename} to activate the SSH"
+  sudo touch ${filename}
+
+  #
+  # No console output when launching games
+  #
+  trace "Empty ${WORKING_DIRECTORY}/etc/issue"
+  sudo truncate -s 0 "${WORKING_DIRECTORY}/etc/issue"
+  trace "Empty ${WORKING_DIRECTORY}/etc/motd"
+  sudo truncate -s 0 "${WORKING_DIRECTORY}/etc/motd"
+  filename="${WORKING_DIRECTORY}/home/pi/.bashrc"
+  trace "Comment retropie_welcome line in ${filename}"
+  sudo sed -i '/^retropie_welcome/ s/^#*/#/' ${filename}
+  filename="${WORKING_DIRECTORY}/etc/rc.local"
+  trace "Add  sudo sh -c 'TERM=linux setterm -foreground black -clear all >/dev/tty0' in ${filename}"
+  # i : add line before the line selected by search term
+  sudo sed -i '/^exit 0/i\sudo sh -c "TERM=linux setterm -foreground black -clear all >\/dev\/tty0"' ${filename}
 }
 
 # Parameters Management #################################################
