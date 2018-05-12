@@ -212,12 +212,6 @@ function umount_image() {
 }
 
 # SD Creation Mangement #######################################################
-function set_directories() {
-  trace "##########################"
-  trace "set_directories ##########"
-
-  root_path_boot=
-}
 
 function create_SD () {
   trace "##########################"
@@ -295,6 +289,7 @@ function create_SD () {
   # Splash screen management
   #
   filename="${WORKING_DIRECTORY}/etc/splashscreen.list"
+  trace "** Splash Screen"
   trace "No Splash Screen. Remove ${filename}"
   sudo rm ${filename}
 
@@ -302,6 +297,7 @@ function create_SD () {
   # autolaunch.sh installation
   #
   filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  trace "** Autolaunch script"
   trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/"
   sudo cp ${filename} "${WORKING_DIRECTORY}/etc/profile.d/"
 
@@ -309,12 +305,14 @@ function create_SD () {
   # enable ssh by default
   #
   filename="${BOOT_DIRECTORY}/ssh"
+  trace "** SSH enabling"
   trace "touch ${filename} to activate the SSH"
   sudo touch ${filename}
 
   #
   # No console output when launching games
   #
+  trace "** Remove traces in console"
   trace "Empty ${WORKING_DIRECTORY}/etc/issue"
   sudo truncate -s 0 "${WORKING_DIRECTORY}/etc/issue"
   trace "Empty ${WORKING_DIRECTORY}/etc/motd"
