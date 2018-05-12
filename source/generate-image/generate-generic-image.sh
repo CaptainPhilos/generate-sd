@@ -290,8 +290,8 @@ function create_SD () {
   #
   filename="${WORKING_DIRECTORY}/etc/splashscreen.list"
   trace "** Splash Screen"
-  trace "No Splash Screen. Remove ${filename}"
-  sudo rm ${filename}
+  trace "No Splash Screen. Empty ${filename}"
+  sudo truncate -s 0 "${filename}"
 
   #
   # autolaunch.sh installation
