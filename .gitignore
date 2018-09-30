@@ -1,2 +1,4 @@
 work/
 .DS_Store
+source/launch-game/__pycache__
+*.log
