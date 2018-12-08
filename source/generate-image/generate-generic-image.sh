@@ -360,8 +360,6 @@ function usage() {
   echo
   echo "USAGE: $(basename $0) -i image Retropie d'origine -o image à générer"
   echo
-  echo "Use '--help' to see all the options"
-  echo
 }
 
 function get_options() {
