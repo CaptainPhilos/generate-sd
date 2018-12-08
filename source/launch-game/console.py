@@ -106,7 +106,7 @@ class Console:
         """
         command_line = ""
         if len(self.game_name) > 0:
-            command_line = self.launch_command.replace('%ROM%', self.game_name)
+            command_line = self.launch_command.replace('%ROM%', self.console_path+"/"+self.game_name)
             logging.info("Command line for game "+self.game_name+" is : "+command_line)
         return command_line
 

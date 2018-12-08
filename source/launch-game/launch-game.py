@@ -42,7 +42,7 @@ def main():
 
             # execute command
             if retropie_Computer:
-                os.system(console.launchCommand())
+                os.system('"'+console.launchCommand()+'"')
 
     except Exception as inst:
         print(type(inst))    # the exception instance

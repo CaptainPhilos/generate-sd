@@ -11,15 +11,16 @@
 
 # Constants ############################################################
 
-LOOP0="/dev/loop20"
 WORKING_DIRECTORY="work_temp"
 BOOT_DIRECTORY="${WORKING_DIRECTORY}/boot"
 AUTOLAUNCH_SCRIPT_FILENAME="10-retropie.sh"
-
+TEMP_IMAGE="${HOME}/out.img"
 # globals ################################################################
 
 debug="ON"
 logFileName=
+
+loop=
 
 original_retropie_image=
 game_image=
@@ -148,33 +149,60 @@ function prepare_image() {
     exitonerror "Pas d'image de destination"
   fi
 
-  # Duplicate the original image file into destination image file
-
+  # Delete old result is any
   if [[ -f ${result_image} ]]; then
     trace "Suppression de l'ancienne image résultat ${result_image}"
     rm ${result_image}
   fi
-  trace "Copie de ${original_retropie_image} vers ${result_image}"
-  cp ${original_retropie_image} ${result_image}
+
+  # Delete old result is any
+  if [[ -f ${TEMP_IMAGE} ]]; then
+    trace "Suppression de l'ancienne image de travail ${TEMP_IMAGE}"
+    rm ${TEMP_IMAGE}
+  fi
+
+  # temporary duplicate to local directory (usefull is executing the script inside a VM)
+  trace "Copie de ${original_retropie_image} vers ${TEMP_IMAGE}"
+  cp ${original_retropie_image} ${TEMP_IMAGE}
 
   # check if result file is present
-  if ! [[ -f ${result_image} ]]; then
-     exitonerror "Impossible de créer le fichier ${result_image}"
+  if ! [[ -f ${TEMP_IMAGE} ]]; then
+     exitonerror "Impossible de créer le fichier ${TEMP_IMAGE}"
   fi
 
   # End successfully
-  trace "L'image de destination ${result_image} a été corectement générée"
+  trace "L'image de travail ${TEMP_IMAGE} a été corectement générée"
+}
+
+function prepare_result() {
+  trace "##########################"
+  trace "prepare_result ###########"
+
+  # check if result file is present
+  if ! [[ -f ${TEMP_IMAGE} ]]; then
+     exitonerror "L'image de travail ${TEMP_IMAGE} n'existe pas"
+  fi
+
+  # copy the result to the given destianation
+  trace "Copie de ${TEMP_IMAGE} vers ${result_image}"
+  cp ${TEMP_IMAGE} ${result_image}
 }
 
 function mount_image() {
   trace "##########################"
   trace "mount_image ##############"
 
+  # Get the first device available
+  loop=$(sudo losetup -f)
+  if [[ -z ${loop} ]]; then
+    exitonerror "Impossible de trouver un périphérique disponible pour charge l'image (losetup -f error)"
+  fi
+
   # Associate image to peripheric
-  trace "Association de ${LOOP0} avec l'image ${result_image}"
-  $(sudo losetup -P ${LOOP0} ${result_image})
+  sudo losetup --show -P ${loop} ${TEMP_IMAGE}
+  trace "Association de ${loop} avec l'image ${TEMP_IMAGE}"
   if [ $? -ne 0 ]; then
-    exitonerror "Impossible d'associer l'image ${result_image} au pseudo périphérique ${LOOP0}"
+    exitonerror "Impossible d'associer l'image ${TEMP_IMAGE} au pseudo périphérique ${loop}"
   fi
 
   # Create temporary directory
@@ -185,15 +213,15 @@ function mount_image() {
   fi
 
   # Mount the image and map on the working directory
-  trace "Montage de ${LOOP0}p2 sur ${WORKING_DIRECTORY}"
-  sudo mount "${LOOP0}p2" "${WORKING_DIRECTORY}"
+  trace "Montage de ${loop}p2 sur ${WORKING_DIRECTORY}"
+  sudo mount "${loop}p2" "${WORKING_DIRECTORY}"
   if [ $? -ne 0 ]; then
-    exitonerror_cleanneeded "Impossible de monter ${LOOP0}p2 sur ${WORKING_DIRECTORY}"
+    exitonerror_cleanneeded "Impossible de monter ${loop}p2 sur ${WORKING_DIRECTORY}"
   fi
-  trace "Montage de ${LOOP0}p1 sur ${WORKING_DIRECTORY}/boot"
-  sudo mount "${LOOP0}p1" "${WORKING_DIRECTORY}/boot"
+  trace "Montage de ${loop}p1 sur ${WORKING_DIRECTORY}/boot"
+  sudo mount "${loop}p1" "${WORKING_DIRECTORY}/boot"
   if [ $? -ne 0 ]; then
-    exitonerror_cleanneeded "Impossible de monter ${LOOP0}p1 sur ${WORKING_DIRECTORY}/boot"
+    exitonerror_cleanneeded "Impossible de monter ${loop}p1 sur ${WORKING_DIRECTORY}/boot"
   fi
 }
 
@@ -201,14 +229,14 @@ function umount_image() {
   trace "##########################"
   trace "umount_image #############"
 
-  trace "Démontage de ${LOOP0}p1"
-  sudo umount "${LOOP0}p1"
-  trace "Démontage de ${LOOP0}p2"
-  sudo umount "${LOOP0}p2"
+  trace "Démontage de ${loop}p1"
+  sudo umount "${loop}p1"
+  trace "Démontage de ${loop}p2"
+  sudo umount "${loop}p2"
   trace "Suppression du répertoire de travail ${WORKING_DIRECTORY}"
   rm -rf ${WORKING_DIRECTORY}
-  trace "Désassociation du périphérique ${LOOP0} et de l'image ${result_image}"
-  $(sudo losetup -D)
+  trace "Désassociation du périphérique ${loop} et de l'image ${TEMP_IMAGE}"
+  $(sudo losetup -d "${loop}")
 }
 
 # SD Creation Mangement #######################################################
@@ -400,5 +428,7 @@ create_SD
 
 read -p "Vérifier le résultat avant démontage des répertoires... " -n1 -s
 umount_image
+
+prepare_result
 
 exit 0
