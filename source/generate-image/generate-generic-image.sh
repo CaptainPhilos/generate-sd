@@ -13,12 +13,18 @@
 
 WORKING_DIRECTORY="work_temp"
 BOOT_DIRECTORY="${WORKING_DIRECTORY}/boot"
+ROMS_DIRECTORY="${WORKING_DIRECTORY}/home/pi/RetroPie/roms"
 AUTOLAUNCH_SCRIPT_FILENAME="10-retropie.sh"
+AUTOLAUNCH_SCRIPT_FILENAME_GenericLaunch="10-retropie.sh.generic"
+AUTOLAUNCH_SCRIPT_FILENAME_SpecificLaunch="10-retropie.sh.specific"
 TEMP_IMAGE="${HOME}/out.img"
+
 # globals ################################################################
 
 debug="ON"
 logFileName=
+specific=
+generic=
 
 loop=
 
@@ -35,17 +41,49 @@ function install_prerequesites() {
     exitonerror "logiciel losetup manquant. Impossible de charger l'image de Retropie"
   fi
 }
+
+function check_parameters() {
+
+  # check if the user selects Generic or Specific Mode
+  if [[ -z "${specific}" && -z "${generic}" ]]; then
+    usage
+    exitonerror "Pas de choix entre mode générique ou spécifique"
+  fi
+
+  # check if the user selects Generic or Specific Mode
+  if ! [[ -z "${specific}" ]] && ! [[ -z "${generic}" ]]; then
+    usage
+    exitonerror "Il faut choisir entre mode générique ou spécifique"
+  fi
+
+  # check if the user specify a good filename for the game
+  if ! [[ -z "${specific}" ]]; then
+
+    # No filename
+    if [[ -z "${gamefile}" ]]; then
+      usage
+      exitonerror "Il faut préciser un nom de fichier pour le jeu à installer"
+    fi
+
+    # bad file@
+    if ! [[ -f "${gamefile}" ]]; then
+      usage
+      exitonerror "Il faut préciser un nom de fichier valide pour le jeu à installer"
+    fi
+  fi
+}
+
 # Error Management #######################################################
 
 function init_log_file() {
 
     # if filename is empty, get the filename for logs from the script filename
-    if [[ -z ${logFileName} ]]; then
+    if [[ -z "${logFileName}" ]]; then
       logFileName="${BASH_SOURCE[0]}"
       logFileName="${logFileName%.*}.log"
 
       # Remove previous log file if any
-      rm ${logFileName}
+      rm "${logFileName}"
     fi
 }
 
@@ -54,14 +92,14 @@ function trace() {
 
   # display to console
   if ! [[ -z ${debug} ]]; then
-    echo ${tracemsg}
+    echo "${tracemsg}"
   fi
 
   #init log file if needed
   init_log_file
 
   #add to log file
-  echo ${tracemsg} >> ${logFileName}
+  echo ${tracemsg} >> "${logFileName}"
 }
 
 function info() {
@@ -69,14 +107,14 @@ function info() {
 
   # display to console
   if ! [[ -z ${debug} ]]; then
-    echo ${tracemsg}
+    echo "${tracemsg}"
   fi
 
   #init log file if needed
   init_log_file
 
   #add to log file
-  echo ${tracemsg} >> ${logFileName}
+  echo ${tracemsg} >> "${logFileName}"
 }
 
 
@@ -84,15 +122,15 @@ function warning() {
   local warningmsg="[$(date -u)][WARN] $1"
 
   # display to console
-  if ! [[ -z $debug ]]; then
-    echo ${warningmsg}
+  if ! [[ -z "$debug" ]]; then
+    echo "${warningmsg}"
   fi
 
   #init log file if needed
   init_log_file
 
   #add to log file
-  echo ${warningmsg} >> ${logFileName}
+  echo "${warningmsg}" >> "${logFileName}"
 }
 
 function exitonerror() {
@@ -100,14 +138,14 @@ function exitonerror() {
 
   # display to console
   if ! [[ -z $debug ]]; then
-    echo ${errormsg}
+    echo "${errormsg}"
   fi
 
   #init log file if needed
   init_log_file
 
   #add to log file
-  echo ${errormsg} >> ${logFileName}
+  echo "${errormsg}" >> "${logFileName}"
 
   exit 1
 }
@@ -116,15 +154,15 @@ function exitonerror_cleanneeded() {
   local errormsg="[$(date -u)][ERROR] $1"
 
   # display to console
-  if ! [[ -z $debug ]]; then
-    echo ${errormsg}
+  if ! [[ -z "$debug" ]]; then
+    echo "${errormsg}"
   fi
 
   #init log file if needed
   init_log_file
 
   #add to log file
-  echo ${errormsg} >> ${logFileName}
+  echo "${errormsg}" >> "${logFileName}"
 
   # Free the images
   umount_image
@@ -138,35 +176,35 @@ function prepare_image() {
   trace "##########################"
   trace "prepare_image ############"
 
-  if [[ -z ${original_retropie_image} ]]; then
+  if [[ -z "${original_retropie_image}" ]]; then
     exitonerror "Pas d'image Retropie en entrée"
   fi
-  if ! [[ -f ${original_retropie_image} ]]; then
+  if ! [[ -f "${original_retropie_image}" ]]; then
     exitonerror "Le fichier image Retropie d'entrée est introuvable"
   fi
 
-  if [[ -z ${result_image} ]]; then
+  if [[ -z "${result_image}" ]]; then
     exitonerror "Pas d'image de destination"
   fi
 
   # Delete old result is any
-  if [[ -f ${result_image} ]]; then
+  if [[ -f "${result_image}" ]]; then
     trace "Suppression de l'ancienne image résultat ${result_image}"
-    rm ${result_image}
+    rm "${result_image}"
   fi
 
   # Delete old result is any
-  if [[ -f ${TEMP_IMAGE} ]]; then
+  if [[ -f "${TEMP_IMAGE}" ]]; then
     trace "Suppression de l'ancienne image de travail ${TEMP_IMAGE}"
-    rm ${TEMP_IMAGE}
+    rm "${TEMP_IMAGE}"
   fi
 
   # temporary duplicate to local directory (usefull is executing the script inside a VM)
   trace "Copie de ${original_retropie_image} vers ${TEMP_IMAGE}"
-  cp ${original_retropie_image} ${TEMP_IMAGE}
+  cp "${original_retropie_image}" "${TEMP_IMAGE}"
 
   # check if result file is present
-  if ! [[ -f ${TEMP_IMAGE} ]]; then
+  if ! [[ -f "${TEMP_IMAGE}" ]]; then
      exitonerror "Impossible de créer le fichier ${TEMP_IMAGE}"
   fi
 
@@ -179,13 +217,13 @@ function prepare_result() {
   trace "prepare_result ###########"
 
   # check if result file is present
-  if ! [[ -f ${TEMP_IMAGE} ]]; then
+  if ! [[ -f "${TEMP_IMAGE}" ]]; then
      exitonerror "L'image de travail ${TEMP_IMAGE} n'existe pas"
   fi
 
   # copy the result to the given destianation
   trace "Copie de ${TEMP_IMAGE} vers ${result_image}"
-  cp ${TEMP_IMAGE} ${result_image}
+  cp "${TEMP_IMAGE}" "${result_image}"
 }
 
 function mount_image() {
@@ -194,12 +232,12 @@ function mount_image() {
 
   # Get the first device available
   loop=$(sudo losetup -f)
-  if [[ -z ${loop} ]]; then
+  if [[ -z "${loop}" ]]; then
     exitonerror "Impossible de trouver un périphérique disponible pour charge l'image (losetup -f error)"
   fi
 
   # Associate image to peripheric
-  sudo losetup --show -P ${loop} ${TEMP_IMAGE}
+  sudo losetup --show -P "${loop}" ${TEMP_IMAGE}
   trace "Association de ${loop} avec l'image ${TEMP_IMAGE}"
   if [ $? -ne 0 ]; then
     exitonerror "Impossible d'associer l'image ${TEMP_IMAGE} au pseudo périphérique ${loop}"
@@ -207,7 +245,7 @@ function mount_image() {
 
   # Create temporary directory
   trace "Création du répertoire de travail ${WORKING_DIRECTORY}"
-  mkdir ${WORKING_DIRECTORY}
+  mkdir "${WORKING_DIRECTORY}"
   if [ $? -ne 0 ]; then
     exitonerror_cleanneeded "Impossible de créer le répertoire de travail sur le disque"
   fi
@@ -241,15 +279,15 @@ function umount_image() {
 
 # SD Creation Mangement #######################################################
 
-function create_SD () {
-  trace "##########################"
-  trace "create_SD ################"
+function apply_common_modifications_on_SD () {
+  trace "####################################"
+  trace "apply_common_modifications_on_SD ###"
 
   #
   # boot/cmdline.txt
   #
   local filename="${BOOT_DIRECTORY}/cmdline.txt"
-  trace "** Apply modifications to ${filename}"
+  trace "## Apply modifications to ${filename}"
 
   # replace "console=tty1" by "logo.nologo loglevel=3 vt.global_cursor_default=0"
   local pattern_to_remove="console=tty1"
@@ -257,138 +295,206 @@ function create_SD () {
 
   #command : sed '0,/tata/ s//zaza/' in.txt
   trace "replace ${pattern_to_remove} by ${pattern_to_add} in file ${filename}"
-  sudo sed -i '0,/'"${pattern_to_remove}"'/ s//'"${pattern_to_add}"'/' ${filename}
+  sudo sed -i '0,/'"${pattern_to_remove}"'/ s//'"${pattern_to_add}"'/' "${filename}"
 
   #
   # boot/config.txt
   #
   filename="${BOOT_DIRECTORY}/config.txt"
-  trace "** Apply modifications to ${filename}"
+  trace "## Apply modifications to ${filename}"
 
   # uncomment "disable_overscan=1"
   trace "uncomment disable_overscan=1"
-  sudo sed -i '0,/#disable_overscan/ s//disable_overscan/' ${filename}
+  sudo sed -i '0,/#disable_overscan/ s//disable_overscan/' "${filename}"
 
   # add "disable_splash=1"
   trace "add disable_splash=1"
-  sudo sed -i '$adisable_splash=1' ${filename}
+  sudo sed -i '$adisable_splash=1' "${filename}"
 
   # add "disable_splash=1"
   trace "add plymouth.enable=0"
-  sudo sed -i '$aplymouth.enable=0' ${filename}
+  sudo sed -i '$aplymouth.enable=0' "${filename}"
 
   #
   # retropie/opt/retropie/configs/all/runcommand.cfg
   #
   filename="${WORKING_DIRECTORY}/opt/retropie/configs/all/runcommand.cfg"
-  trace "** Apply modifications to ${filename}"
+  trace "## Apply modifications to ${filename}"
 
   # add "disable_joystick=1"
   trace "replace disable_joystick=0 by disable_joystick=1 in file ${filename}"
-  sudo sed -i '/disable_joystick/ s/"0"/"1"/g' ${filename}
+  sudo sed -i '/disable_joystick/ s/"0"/"1"/g' "${filename}"
 
   # add "disable_splash=1"
   trace "replace disable_menu=0 by disable_menu=1 in file ${filename}"
-  sudo sed -i '/disable_menu/ s/"0"/"1"/g' ${filename}
+  sudo sed -i '/disable_menu/ s/"0"/"1"/g' "${filename}"
 
   #
   # retropie/opt/retropie/emulators/retroarch/retroarch.cfg
   #
   filename="${WORKING_DIRECTORY}/opt/retropie/emulators/retroarch/retroarch.cfg"
-  trace "** Apply modifications to ${filename}"
+  trace "## Apply modifications to ${filename}"
 
   # uncomment and set to false "video_font_enable=false"
   trace "uncomment video_font_enable and set to false in file ${filename}"
-  sudo sed -i '/video_font_enable/ s/#//g' ${filename}
-  sudo sed -i '/video_font_enable/ s/true/false/g' ${filename}
+  sudo sed -i '/video_font_enable/ s/#//g' "${filename}"
+  sudo sed -i '/video_font_enable/ s/true/false/g' "${filename}"
 
   #
   # retropie/opt/retropie/configs/all/retroarch.cfg
   #
   filename="${WORKING_DIRECTORY}/opt/retropie/configs/all/retroarch.cfg"
-  trace "** Apply modifications to ${filename}"
+  trace "## Apply modifications to ${filename}"
 
   # uncomment and set to false "video_font_enable=false"
   trace "uncomment video_font_enable and set to false in file ${filename}"
-  sudo sed -i '/video_font_enable/ s/#//g' ${filename}
-  sudo sed -i '/video_font_enable/ s/true/false/g' ${filename}
+  sudo sed -i '/video_font_enable/ s/#//g' "${filename}"
+  sudo sed -i '/video_font_enable/ s/true/false/g' "${filename}"
 
   #
   # Splash screen management
   #
   filename="${WORKING_DIRECTORY}/etc/splashscreen.list"
-  trace "** Splash Screen"
+  trace "## Splash Screen"
   trace "No Splash Screen. Empty ${filename}"
   sudo truncate -s 0 "${filename}"
-
-  #
-  # autolaunch.sh installation
-  #
-  filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME}"
-  trace "** Autolaunch script"
-  trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/"
-  sudo cp ${filename} "${WORKING_DIRECTORY}/etc/profile.d/"
 
   #
   # enable ssh by default
   #
   filename="${BOOT_DIRECTORY}/ssh"
-  trace "** SSH enabling"
+  trace "## SSH enabling"
   trace "touch ${filename} to activate the SSH"
-  sudo touch ${filename}
+  sudo touch "${filename}"
 
   #
   # No console output when launching games
   #
-  trace "** Remove traces in console"
+  trace "## Remove traces in console"
   trace "Empty ${WORKING_DIRECTORY}/etc/issue"
   sudo truncate -s 0 "${WORKING_DIRECTORY}/etc/issue"
   trace "Empty ${WORKING_DIRECTORY}/etc/motd"
   sudo truncate -s 0 "${WORKING_DIRECTORY}/etc/motd"
   filename="${WORKING_DIRECTORY}/home/pi/.bashrc"
   trace "Comment retropie_welcome line in ${filename}"
-  sudo sed -i '/^retropie_welcome/ s/^#*/#/' ${filename}
+  sudo sed -i '/^retropie_welcome/ s/^#*/#/' "${filename}"
   filename="${WORKING_DIRECTORY}/etc/rc.local"
   trace "Add  sudo sh -c 'TERM=linux setterm -foreground black -clear all >/dev/tty0' in ${filename}"
   # i : add line before the line selected by search term
-  sudo sed -i '/^exit 0/i\sudo sh -c "TERM=linux setterm -foreground black -clear all >\/dev\/tty0"' ${filename}
+  sudo sed -i '/^exit 0/i\sudo sh -c "TERM=linux setterm -foreground black -clear all >\/dev\/tty0"' "${filename}"
+}
+
+function create_Generic_SD () {
+  trace "##########################"
+  trace "create_Generic_SD ########"
+
+  #
+  # apply basics modifications
+  #
+  apply_common_modifications_on_SD
+
+  #
+  # autolaunch.sh installation
+  #
+  filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME_GenericLaunch}"
+  trace "## Autolaunch script"
+  trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  sudo cp "${filename}" "${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+}
+
+function create_Specific_SD () {
+  trace "###########################"
+  trace "create_Specific_SD ########"
+
+  #
+  # apply basics modifications
+  #
+  apply_common_modifications_on_SD
+
+  #
+  # autolaunch.sh installation
+  #
+  filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME_SpecificLaunch}"
+  trace "## Autolaunch script"
+  trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  sudo cp "${filename}" "${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+
+  #
+  # game installation
+  #
+  trace "## Install game into Core directory"
+  gamename=$(basename -- "${gamefile}")
+  corename=$(basename -- $(dirname -- "${gamefile}"))
+  trace "Game to install is ${gamename} in core ${corename}"
+
+  # check if roms directory exists in the SD
+  trace "check if the core is known --> ${ROMS_DIRECTORY}/${corename}"
+  if [[ -d "${ROMS_DIRECTORY}/${corename}" ]]; then
+    trace "Copy gamefile ${gamename} to core ${corename}"
+    sudo cp "${gamefile}" "${ROMS_DIRECTORY}/${corename}/"
+  else
+    read -p "Le jeu est dans un répertoire core inconnu. Time to check " -n1 -s
+    exitonerror_cleanneeded "Le jeu est dans un répertoire core inconnu : ${corename}"
+  fi
+
+  #
+  # core and game name replacement
+  #
+  trace "## Put Core and Game name into the launcher file"
+  filename="${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  trace "replace CORE_NAME by ${corename} in file ${filename}"
+  sudo sed -i '0,/'"CORE_NAME"'/ s//'"${corename}"'/' "${filename}"
+  trace "replace GAME_NAME by ${gamename} in file ${filename}"
+  sudo sed -i '0,/'"GAME_NAME"'/ s//'"${gamename}"'/' "${filename}"
 }
 
 # Parameters Management #################################################
 
 function usage() {
   echo
-  echo "USAGE: $(basename $0) -i image Retropie d'origine -o image à générer"
+  echo "USAGE: $(basename $0) (-g ou -s) -i \"image Retropie d'origine\" -o \"image à générer\""
   echo
 }
 
 function get_options() {
 
-  while getopts "i:o:dh" option ;
+  while getopts "gs:i:o:dh" option ;
   do
     trace "getopts OPTIND=$OPTIND, Option=$option, OPTARG=$OPTARG, OPTERR=$OPTERR"
     case "${option}" in
 
       #Input Retropie Image
       i)
-        original_retropie_image=${OPTARG}
+        original_retropie_image="${OPTARG}"
         trace "Le fichier d'entrée est ${original_retropie_image}"
 	      ;;
 
       #Ouput image result
       o)
-        result_image=${OPTARG}
+        result_image="${OPTARG}"
 	      trace "Le fichier de sortir est ${result_image}"
         ;;
 
-      #Missing Arguments
-      :)
-        exitonerror "L'option \"$OPTARG\" requiert une argument"
+      #Specific with filepath to game to install
+      s)
+        trace "Specific Mode ON"
+        gamefile=${OPTARG}
+        specific="ON"
+        ;;
+
+      g)
+        trace "Generic Mode ON"
+        generic="ON"
         ;;
 
       d)
         trace "Mode Debug ON"
         debug="ON"
+        ;;
+
+      #Missing Arguments
+      :)
+        exitonerror "L'option \"$OPTARG\" requiert un argument"
         ;;
 
       #Invalid Option
@@ -417,14 +523,23 @@ get_options "$@"
 
 install_prerequesites
 
+check_parameters
+
 prepare_image
 
 mount_image
 
-read -p "Vérifier le résultat avant modification des fichiers de l'image... " -n1 -s
-create_SD
+# read -p "Vérifier le résultat avant modification des fichiers de l'image... " -n1 -s
 
-read -p "Vérifier le résultat avant démontage des répertoires... " -n1 -s
+if ! [[ -z ${generic} ]]; then
+  create_Generic_SD
+fi
+
+if ! [[ -z ${specific} ]]; then
+  create_Specific_SD
+fi
+
+read -p "Les modifications ont été appliquées.\nVérifiez le résultat avant démontage des répertoires... " -n1 -s
 umount_image
 
 prepare_result

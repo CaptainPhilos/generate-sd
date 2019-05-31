@@ -6,7 +6,6 @@ from logger import *
 
 # Command to launch games
 CONST_LAUNCH_COMMAND = "/opt/retropie/supplementary/runcommand/runcommand.sh"
-CONST_EMULATIONSTATION_COMMAND = "bash /opt/retropie/configs/all/autostart.sh"
 
 # Files constants
 CONTROLLER_CONFIG_EXT="*.cfg"

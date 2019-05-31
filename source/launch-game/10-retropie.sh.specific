@@ -1,0 +1,55 @@
+#!/bin/bash
+
+##########################################################################
+
+if [ "`tty`" = "/dev/tty1" ] && [ "$USER" = "pi" ]; then
+
+
+  ##########################################################################
+  # check if system doesn't know the configuration of each connected controller
+
+  check_Controllers=1
+
+  IFS=''
+  while read -r LINE   # avoids the use of cut
+  do
+    filename=$(echo ${LINE} | tee /dev/tty | grep -Po "(?<=input: )(.*)(?= as)")
+    filename="${filename}.cfg"
+    echo "joypad filename \"${filename}\""
+
+    # find file in /opt/retropie/configs/all/retroarch-joypads
+    echo "Checking /opt/retropie/configs/all/retroarch-joypads/${filename}..."
+    if [[ -f "/opt/retropie/configs/all/retroarch-joypads/"${filename} ]]; then
+      echo "Controller file found in /opt/retropie/configs/all/retroarch-joypads"
+    else
+      # a controller is unknown, reset result
+      check_Controllers=0
+      break
+    fi
+
+  done < <(dmesg | grep input:)
+
+  echo "Result : ${check_Controllers}"
+
+  ##########################################################################
+  #   if one controller has an unkown configuration then launch Emulation Station for configuration
+
+  if [[ ${check_Controllers} == 0 ]]; then
+    # launch emulation station (maybe it's a bad idea)
+    bash "/opt/retropie/configs/all/autostart.sh"
+  else
+    corename="CORE_NAME"
+    gamename="GAME_NAME"
+    # If script file is found in SD Card, then launch it
+    if [[ -f "/home/pi/RetroPie/roms/${corename}/${gamename}" ]]; then
+      echo "Launching /opt/retropie/supplementary/runcommand/runcommand.sh 0 _SYS_ ${corename} ${gamename}"
+      # when building image on Debian OS, game file must be root:root.
+      # so need to change user otherwise runcommand couldn't lanch game
+      sudo chown pi:pi "/home/pi/RetroPie/roms/${corename}/${gamename}"
+      /opt/retropie/supplementary/runcommand/runcommand.sh 0 _SYS_ "${corename}" "/home/pi/RetroPie/roms/${corename}/${gamename}"
+    # otherwise, launch emulation station (maybe it's a bad idea)
+    else
+      bash "/opt/retropie/configs/all/autostart.sh"
+    fi
+  fi
+fi

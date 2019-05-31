@@ -44,15 +44,16 @@ class Console:
 
     def find_controller(self):
         """ Check if the controler file description is included
-        if no controller is found, then nothing
+        if no controller is found, then raise an error
+        COULD BE CHANGED
         """
         # find every files with controller config extension
         list_config_files=glob.glob(self.console_path+"/"+CONTROLLER_CONFIG_EXT)
 
         # no files ? we can stop immediately
-        # if len(list_config_files) == 0:
-            # logging.info("No Controller file found in directory "+self.console_path+" for Console : "+self.console_name)
-            # raise Exception("No Controller file found in directory "+self.console_path,"Console : "+self.console_name)
+        if len(list_config_files) == 0:
+            logging.error("No Controller file found in directory "+self.console_path+" for Console : "+self.console_name)
+            raise Exception("No Controller file found in directory "+self.console_path,"Console : "+self.console_name)
 
         # get the first controller config
         logging.info("Controller files "+str(list_config_files)+" found in directory "+self.console_path+" for Console : "+self.console_name)
@@ -105,7 +106,7 @@ class Console:
         """
         command_line = ""
         if len(self.game_name) > 0:
-            command_line = self.launch_command.replace('%ROM%', "\""+self.console_path+"/"+self.game_name+"\"")
+            command_line = self.launch_command.replace('%ROM%', self.console_path+"/"+self.game_name)
             logging.info("Command line for game "+self.game_name+" is : "+command_line)
         return command_line
 
