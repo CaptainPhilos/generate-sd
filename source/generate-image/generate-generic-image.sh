@@ -14,9 +14,11 @@
 WORKING_DIRECTORY="work_temp"
 BOOT_DIRECTORY="${WORKING_DIRECTORY}/boot"
 ROMS_DIRECTORY="${WORKING_DIRECTORY}/home/pi/RetroPie/roms"
-AUTOLAUNCH_SCRIPT_FILENAME="10-retropie.sh"
+AUTOLAUNCH_SCRIPT_FILENAME="autostart.sh"
+AUTOLAUNCH_DIRECTORY="${WORKING_DIRECTORY}/opt/retropie/configs/all"
 AUTOLAUNCH_SCRIPT_FILENAME_GenericLaunch="10-retropie.sh.generic"
 AUTOLAUNCH_SCRIPT_FILENAME_SpecificLaunch="10-retropie.sh.specific"
+JOYPAD_CONFIGURATION_DIRECTORY="${WORKING_DIRECTORY}/opt/retropie/configs/all/retroarch/autoconfig"
 TEMP_IMAGE="${HOME}/out.img"
 
 # globals ################################################################
@@ -31,6 +33,9 @@ loop=
 original_retropie_image=
 game_image=
 result_image="out.img"
+samples_dir=
+controller_file=
+emulatorname=
 
 # OS pre-requisite #######################################################
 
@@ -65,10 +70,22 @@ function check_parameters() {
       exitonerror "Il faut préciser un nom de fichier pour le jeu à installer"
     fi
 
-    # bad file@
+    # bad file
     if ! [[ -f "${gamefile}" ]]; then
       usage
       exitonerror "Il faut préciser un nom de fichier valide pour le jeu à installer"
+    fi
+
+    # if samples is provided then check samples directory existence
+    if [[ ! -z "${samples_dir}" ]] && [[ ! -d "${samples_dir}" ]]; then
+      usage
+      exitonerror "Il faut préciser un répertoire de Samples valide pour accompagner le jeu à installer"
+    fi
+
+    # if controller filename is provided then check file exists
+    if [[ ! -z "${controller_file}" ]] && [[ ! -f "${controller_file}" ]]; then
+      usage
+      exitonerror "Il faut préciser un nom de fichier valide pour la configuration du joystick"
     fi
   fi
 }
@@ -289,9 +306,9 @@ function apply_common_modifications_on_SD () {
   local filename="${BOOT_DIRECTORY}/cmdline.txt"
   trace "## Apply modifications to ${filename}"
 
-  # replace "console=tty1" by "logo.nologo loglevel=3 vt.global_cursor_default=0"
+  # replace "console=tty1" by "console=tty3 logo.nologo loglevel=3 vt.global_cursor_default=0"
   local pattern_to_remove="console=tty1"
-  local pattern_to_add="logo.nologo loglevel=3 vt.global_cursor_default=0"
+  local pattern_to_add="console=tty3 logo.nologo loglevel=3 vt.global_cursor_default=0"
 
   #command : sed '0,/tata/ s//zaza/' in.txt
   trace "replace ${pattern_to_remove} by ${pattern_to_add} in file ${filename}"
@@ -398,8 +415,8 @@ function create_Generic_SD () {
   #
   filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME_GenericLaunch}"
   trace "## Autolaunch script"
-  trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
-  sudo cp "${filename}" "${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  trace "Copy autolaunch script from ${filename} to ${AUTOLAUNCH_DIRECTORY}/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  sudo cp "${filename}" "${AUTOLAUNCH_DIRECTORY}/${AUTOLAUNCH_SCRIPT_FILENAME}"
 }
 
 function create_Specific_SD () {
@@ -411,13 +428,16 @@ function create_Specific_SD () {
   #
   apply_common_modifications_on_SD
 
+  # get user & group of roms directory in mounting situation
+  user_group="$(stat -c "%U:%G" ${ROMS_DIRECTORY})"
+
   #
   # autolaunch.sh installation
   #
   filename="$(dirname ${BASH_SOURCE[0]})/../launch-game/${AUTOLAUNCH_SCRIPT_FILENAME_SpecificLaunch}"
   trace "## Autolaunch script"
-  trace "Copy autolaunch script from ${filename} to ${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
-  sudo cp "${filename}" "${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  trace "Copy autolaunch script from ${filename} to ${AUTOLAUNCH_DIRECTORY}/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  sudo cp "${filename}" "${AUTOLAUNCH_DIRECTORY}/${AUTOLAUNCH_SCRIPT_FILENAME}"
 
   #
   # game installation
@@ -432,33 +452,61 @@ function create_Specific_SD () {
   if [[ -d "${ROMS_DIRECTORY}/${corename}" ]]; then
     trace "Copy gamefile ${gamename} to core ${corename}"
     sudo cp "${gamefile}" "${ROMS_DIRECTORY}/${corename}/"
+    sudo chown "${user_group}" "${ROMS_DIRECTORY}/${corename}/${gamename}"
   else
     read -p "Le jeu est dans un répertoire core inconnu. Time to check " -n1 -s
     exitonerror_cleanneeded "Le jeu est dans un répertoire core inconnu : ${corename}"
+  fi
+
+  # Samples installation
+  if ! [[ -z "${samples_dir}" ]]; then
+
+    trace "Copy Samples directory ${samples_dir} to ${ROMS_DIRECTORY}/${corename}/samples"
+    sudo cp -r "${samples_dir}" "${ROMS_DIRECTORY}/${corename}/samples"
+    sudo chown -R "${user_group}" "${ROMS_DIRECTORY}/${corename}/samples"
+
+  fi
+
+  # Controller file
+  if [[ ! -z "${controller_file}" ]]; then
+
+    controller_filename=$(basename -- "${controller_file}")
+    trace "Copy controller file ${controller_file} to ${JOYPAD_CONFIGURATION_DIRECTORY}/${controller_filename}"
+    sudo cp "${controller_file}" "${JOYPAD_CONFIGURATION_DIRECTORY}/${controller_filename}"
+    sudo chown "${user_group}" "${JOYPAD_CONFIGURATION_DIRECTORY}/${controller_filename}"
   fi
 
   #
   # core and game name replacement
   #
   trace "## Put Core and Game name into the launcher file"
-  filename="${WORKING_DIRECTORY}/etc/profile.d/${AUTOLAUNCH_SCRIPT_FILENAME}"
+  filename="${AUTOLAUNCH_DIRECTORY}/${AUTOLAUNCH_SCRIPT_FILENAME}"
   trace "replace CORE_NAME by ${corename} in file ${filename}"
   sudo sed -i '0,/'"CORE_NAME"'/ s//'"${corename}"'/' "${filename}"
   trace "replace GAME_NAME by ${gamename} in file ${filename}"
   sudo sed -i '0,/'"GAME_NAME"'/ s//'"${gamename}"'/' "${filename}"
+  if ! [[ -z "${emulatorname}" ]]; then
+    trace "replace EMULATOR_NAME by ${emulatorname} in file ${filename}"
+    sudo sed -i '0,/'"EMULATOR_NAME"'/ s//'"${emulatorname}"'/' "${filename}"
+  else
+    trace "replace EMULATOR_NAME by "" in file ${filename}"
+    sudo sed -i '0,/'"EMULATOR_NAME"'/ s//''/' "${filename}"
+  fi
 }
 
 # Parameters Management #################################################
 
 function usage() {
   echo
-  echo "USAGE: $(basename $0) (-g ou -s) -i \"image Retropie d'origine\" -o \"image à générer\""
+  echo "USAGE:"
+  echo "image générique: $(basename $0) -g -i \"image Retropie d'origine\" -o \"image à générer\""
+  echo "image spécifique: $(basename $0) -s \"fichier du jeu\" (-p \"répertoire des samples\") (-e \"nom de l'émulateur\") (-c \"fichier controller à installer\") -i \"image Retropie d'origine\" -o \"image à générer\""
   echo
 }
 
 function get_options() {
 
-  while getopts "gs:i:o:dh" option ;
+  while getopts "gc:e:p:s:i:o:dh" option ;
   do
     trace "getopts OPTIND=$OPTIND, Option=$option, OPTARG=$OPTARG, OPTERR=$OPTERR"
     case "${option}" in
@@ -480,6 +528,24 @@ function get_options() {
         trace "Specific Mode ON"
         gamefile=${OPTARG}
         specific="ON"
+        ;;
+
+      #Specific samples directory to copy beside the game
+      p)
+        trace "Samples directory"
+        samples_dir=${OPTARG}
+        ;;
+
+      #Specific controller file name to copy onto SD Card
+      c)
+        trace "Controller filename"
+        controller_file=${OPTARG}
+        ;;
+
+      # Emulator name
+      e)
+        trace "Emulator name"
+        emulatorname=${OPTARG}
         ;;
 
       g)
