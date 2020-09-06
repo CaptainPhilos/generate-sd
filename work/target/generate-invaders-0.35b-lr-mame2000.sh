@@ -1,0 +1,2 @@
+echo "./../source/generate-image/generate-generic-image.sh -d -i ../origin/origin.img -o invaders.mame2000.img -s ../origin/game-to-install/arcade/invaders.zip -p ../origin/game-to-install/arcade/samples.space.invaders/ -e lr-mame2000"
+../../source/generate-image/generate-generic-image.sh -d -i ../origin/origin.img -o invaders.mame2000.img -s ../origin/game-to-install/arcade/invaders.zip -p ../origin/game-to-install/arcade/samples.space.invaders/ -e lr-mame2000

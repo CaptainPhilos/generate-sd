@@ -1,4 +1,7 @@
-work/
 .DS_Store
 source/launch-game/__pycache__
 *.log
+*.img.zip
+*.img
+work/origin/game-to-install
+work/origin/splash_screen

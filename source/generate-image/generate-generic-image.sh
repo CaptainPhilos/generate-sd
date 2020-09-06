@@ -36,6 +36,7 @@ result_image="out.img"
 samples_dir=
 controller_file=
 emulatorname=
+specific_console=
 
 # OS pre-requisite #######################################################
 
@@ -324,13 +325,21 @@ function apply_common_modifications_on_SD () {
   trace "uncomment disable_overscan=1"
   sudo sed -i '0,/#disable_overscan/ s//disable_overscan/' "${filename}"
 
-  # add "disable_splash=1"
+  # Disable overscan_scale=1
+  #trace "comment overscan_scale=1"
+  #sudo sed -i '0,/overscan_scale/ s//#overscan_scale/' "${filename}"
+
+  # Disable large rainbow screen on initial boot
   trace "add disable_splash=1"
   sudo sed -i '$adisable_splash=1' "${filename}"
 
-  # add "disable_splash=1"
+  # add "plymouth.enable=0"
   trace "add plymouth.enable=0"
   sudo sed -i '$aplymouth.enable=0' "${filename}"
+
+  # disable warnings such as undervoltage/overheating
+  trace "add avoid_warnings=1"
+  sudo sed -i '$aavoid_warnings=1' "${filename}"
 
   #
   # retropie/opt/retropie/configs/all/runcommand.cfg
@@ -357,6 +366,27 @@ function apply_common_modifications_on_SD () {
   sudo sed -i '/video_font_enable/ s/#//g' "${filename}"
   sudo sed -i '/video_font_enable/ s/true/false/g' "${filename}"
 
+  #     Special config for borne pacman MO5 with a screen slightly shifted
+  if [[ "${controller_file}" == "borne_pacman_mo5" ]]; then
+
+    # Index of the aspect ratio selection in the menu.
+    # 19 = Config, 20 = 1:1 PAR, 21 = Core Provided, 22 = Custom Aspect Ratio
+    sudo sed -i '/aspect_ratio_index/ s/19/22/g' "${filename}"
+
+    # uncomment and set to 366 "#custom_viewport_width = 0"
+    sudo sed -i '/custom_viewport_width/ s/#//g' "${filename}"
+    sudo sed -i '/custom_viewport_width/ s/0/"366"/g' "${filename}"
+    # uncomment and set to 476 "#custom_viewport_height = 0"
+    sudo sed -i '/custom_viewport_height/ s/#//g' "${filename}"
+    sudo sed -i '/custom_viewport_height/ s/0/"476"/g' "${filename}"
+    # uncomment and set to 149 "#custom_viewport_x = 0"
+    sudo sed -i '/custom_viewport_x/ s/#//g' "${filename}"
+    sudo sed -i '/custom_viewport_x/ s/0/"149"/g' "${filename}"
+    # uncomment and set to 149 "#custom_viewport_Y = 0"
+    sudo sed -i '/custom_viewport_y/ s/#//g' "${filename}"
+    sudo sed -i '/custom_viewport_y/ s/0/"5"/g' "${filename}"
+  fi
+  
   #
   # retropie/opt/retropie/configs/all/retroarch.cfg
   #
@@ -367,6 +397,10 @@ function apply_common_modifications_on_SD () {
   trace "uncomment video_font_enable and set to false in file ${filename}"
   sudo sed -i '/video_font_enable/ s/#//g' "${filename}"
   sudo sed -i '/video_font_enable/ s/true/false/g' "${filename}"
+
+  # set to true "video_smooth = false"
+  trace "set video_smooth to true in file ${filename}"
+  sudo sed -i '/video_smooth/ s/false/true/g' "${filename}"
 
   #
   # Splash screen management
@@ -500,13 +534,13 @@ function usage() {
   echo
   echo "USAGE:"
   echo "image générique: $(basename $0) -g -i \"image Retropie d'origine\" -o \"image à générer\""
-  echo "image spécifique: $(basename $0) -s \"fichier du jeu\" (-p \"répertoire des samples\") (-e \"nom de l'émulateur\") (-c \"fichier controller à installer\") -i \"image Retropie d'origine\" -o \"image à générer\""
+  echo "image spécifique: $(basename $0) -s \"fichier du jeu\" (-p \"répertoire des samples\") (-e \"nom de l'émulateur\") (-c \"fichier controller à installer\") (-x \"nom de la console dont il faut appliquer les paramètres spécifiques) -i \"image Retropie d'origine\" -o \"image à générer\""
   echo
 }
 
 function get_options() {
 
-  while getopts "gc:e:p:s:i:o:dh" option ;
+  while getopts "gc:e:p:s:i:o:x:dh" option ;
   do
     trace "getopts OPTIND=$OPTIND, Option=$option, OPTARG=$OPTARG, OPTERR=$OPTERR"
     case "${option}" in
@@ -556,6 +590,11 @@ function get_options() {
       d)
         trace "Mode Debug ON"
         debug="ON"
+        ;;
+
+      x)
+        trace "specific instructions for specifics consoles"
+        specific_console=${OPTARG}
         ;;
 
       #Missing Arguments
