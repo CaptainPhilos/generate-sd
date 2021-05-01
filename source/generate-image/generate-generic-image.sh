@@ -382,7 +382,7 @@ function apply_common_modifications_on_SD () {
     # uncomment and set to 149 "#custom_viewport_x = 0"
     sudo sed -i '/custom_viewport_x/ s/#//g' "${filename}"
     sudo sed -i '/custom_viewport_x/ s/0/"149"/g' "${filename}"
-    # uncomment and set to 149 "#custom_viewport_Y = 0"
+    # uncomment and set to 5 "#custom_viewport_y = 0"
     sudo sed -i '/custom_viewport_y/ s/#//g' "${filename}"
     sudo sed -i '/custom_viewport_y/ s/0/"5"/g' "${filename}"
   fi
