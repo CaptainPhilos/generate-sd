@@ -1,0 +1,42 @@
+{
+    "variables": {
+      "ssh_key_src": "{{env `HOME`}}/.ssh/id_rsa.pub",
+      "image_home_dir": "/home/pi"
+    },
+    "builders": [
+      {
+        "type": "arm-image",
+        "iso_url": "https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-12-01/2017-11-29-raspbian-stretch-lite.zip",
+        "iso_checksum": "sha256:e942b70072f2e83c446b9de6f202eb8f9692c06e7d92c343361340cc016e0c9f"
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "inline": [
+          "mkdir {{user `image_home_dir`}}/.ssh"
+        ]
+      },
+      {
+        "type": "file",
+        "source": "{{user `ssh_key_src`}}",
+        "destination": "{{user `image_home_dir`}}/.ssh/authorized_keys"
+      },
+      {
+        "_comment": "SSH activation",
+        "type": "shell",
+        "inline": [
+          "touch /boot/ssh"
+        ]
+      },
+      {
+        "type": "shell",
+        "inline": [
+          "sed '/PasswordAuthentication/d' -i /etc/ssh/sshd_config",
+          "echo >> /etc/ssh/sshd_config",
+          "echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config"
+        ]
+      }
+    ]
+  }
+  

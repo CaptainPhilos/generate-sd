@@ -5,3 +5,4 @@ source/launch-game/__pycache__
 *.img
 work/origin/game-to-install
 work/origin/splash_screen
+tools/
