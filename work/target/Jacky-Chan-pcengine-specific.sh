@@ -1,0 +1,2 @@
+echo "../../source/generate-image/generate-generic-image.sh -d -i ../origin/origin.img -o jacky-chan-pcengine-specific.img -s ../origin/game-to-install/pcengine/Jackie Chan's Action Kung Fu (USA).pce -c ../origin/game-to-install/pcengine/Mega\ World.cfg"
+../../source/generate-image/generate-generic-image.sh -d -i ../origin/origin.img -o jacky-chan-pcengine-specific.img -s "../origin/game-to-install/pcengine/Jackie Chan's Action Kung Fu (USA).pce" -c ../origin/game-to-install/pcengine/Mega\ World.cfg
