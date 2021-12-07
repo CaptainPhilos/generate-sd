@@ -5,3 +5,5 @@ source/launch-game/__pycache__
 *.img
 tools/
 .vscode/
+source/packer-generation/packer_cache/
+source/packer-generation/packer-builder-arm-image
