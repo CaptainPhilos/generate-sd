@@ -3,5 +3,7 @@ source/launch-game/__pycache__
 *.log
 *.img.zip
 *.img
-work/origin/game-to-install
-work/origin/splash_screen
+tools/
+.vscode/
+source/packer-generation/packer_cache/
+source/packer-generation/packer-builder-arm-image
