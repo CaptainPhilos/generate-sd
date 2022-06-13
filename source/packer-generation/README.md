@@ -21,7 +21,8 @@ git clone https://github.com/solo-io/packer-builder-arm-image
 cd packer-builder-arm-image
 go mod download
 go build
-cp packer-builder-arm-image [PROJET]/source/packer-generation/
+# cp packer-builder-arm-image [PROJET]/source/packer-generation/
+cp packer-plugin-arm-image [PROJET]/source/packer-generation/
 
 ### Using
 sudo packer build xxxxx

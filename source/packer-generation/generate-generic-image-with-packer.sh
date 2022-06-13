@@ -213,6 +213,7 @@ function create_specific_sd_with_packer () {
   # Build image with Packer
   #
   # sudo packer build -debug -var CABINET=borne_pacman_mo5 -var FILENAME=retropie-mo5-4.7 mo5-retropie.json
+
   sudo packer build \
     -debug \
     -only="${packer_builder}" \
@@ -225,7 +226,7 @@ function create_specific_sd_with_packer () {
     -var SAMPLES_DIR="${samples_dir}" \
     -var CONTROLER_FILE="${controler_file}" \
     -var CONTROLER_FILE_TARGET="${controler_file_target}" \
-    "$(dirname ${BASH_SOURCE[0]})/../packer-generation/mo5-retropie.json"
+    "mo5-retropie.json"
 
 }
 

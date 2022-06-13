@@ -7,3 +7,6 @@ tools/
 .vscode/
 source/packer-generation/packer_cache/
 source/packer-generation/packer-builder-arm-image
+packer-builder-arm-image/
+source/packer-generation/packer-plugin-arm-image
+
