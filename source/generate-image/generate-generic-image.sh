@@ -325,6 +325,20 @@ function apply_common_modifications_on_SD () {
   trace "uncomment disable_overscan=1"
   sudo sed -i '0,/#disable_overscan/ s//disable_overscan/' "${filename}"
 
+  #     Special config for borne arcade1Up with a slight zoom neede
+  if [[ "${specific_console}" == "borne_arcade_1_up" ]]; then
+    trace "replace 'disable_overscan=1' by 'disable_overscan=0' in file ${filename}"
+    sudo sed -i '0,/'"disable_overscan=1"'/ s//'"disable_overscan=0"'/' "${filename}"
+    trace "replace '#overscan_left=16' by 'overscan_left=20' in file ${filename}"
+    sudo sed -i '0,/'"#overscan_left=16"'/ s//'"overscan_left=20"'/' "${filename}"
+    trace "replace '#overscan_right=16' by 'overscan_right=20' in file ${filename}"
+    sudo sed -i '0,/'"#overscan_right=16"'/ s//'"overscan_right=20"'/' "${filename}"
+    trace "replace '#overscan_top=16' by 'overscan_top=0' in file ${filename}"
+    sudo sed -i '0,/'"#overscan_top=16"'/ s//'"overscan_top=0"'/' "${filename}"
+    trace "replace '#overscan_bottom=16' by 'overscan_bottom=0' in file ${filename}"
+    sudo sed -i '0,/'"#overscan_bottom=16"'/ s//'"overscan_bottom=0"'/' "${filename}"
+  fi
+
   # Disable overscan_scale=1
   #trace "comment overscan_scale=1"
   #sudo sed -i '0,/overscan_scale/ s//#overscan_scale/' "${filename}"
@@ -367,7 +381,7 @@ function apply_common_modifications_on_SD () {
   sudo sed -i '/video_font_enable/ s/true/false/g' "${filename}"
 
   #     Special config for borne pacman MO5 with a screen slightly shifted
-  if [[ "${controller_file}" == "borne_pacman_mo5" ]]; then
+  if [[ "${specific_console}" == "borne_pacman_mo5" ]]; then
 
     # Index of the aspect ratio selection in the menu.
     # 19 = Config, 20 = 1:1 PAR, 21 = Core Provided, 22 = Custom Aspect Ratio
@@ -417,6 +431,19 @@ function apply_common_modifications_on_SD () {
   trace "## SSH enabling"
   trace "touch ${filename} to activate the SSH"
   sudo touch "${filename}"
+
+  #
+  # Audio setup
+  #
+  filename="${WORKING_DIRECTORY}/etc/asound.conf"
+
+  #     Special config for borne arcade1Up with use of jack output instead of HDMI
+  if [[ "${specific_console}" == "borne_arcade_1_up" ]]; then
+    trace "add 'pcm.!default {type hw card 1}' in file ${filename}"
+    echo "pcm.!default {type hw card 1}" | sudo tee "${filename}"
+    trace "add 'ctl.!default {type hw card 1}' in file ${filename}"
+    echo "ctl.!default {type hw card 1}" | sudo tee --append "${filename}"
+  fi
 
   #
   # No console output when launching games

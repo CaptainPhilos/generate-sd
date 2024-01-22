@@ -32,7 +32,7 @@ done < <(dmesg | grep input:)
 echo "Result : ${check_Controllers}"
 
 # Bypass joypad control
-#check_Controllers=1
+check_Controllers=1
 
 ##########################################################################
 #   if one controller has an unkown configuration then launch Emulation Station for configuration
