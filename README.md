@@ -16,3 +16,15 @@ umount /dev/sdb
 ```
 sudo dd bs=4M if=game.img of=/dev/sdb
 ```
+
+# Usefull directories
+
+## for controller file
+```
+/opt/retropie/configs/all/retroarch/autoconfig
+```
+
+## for start file
+```
+/opt/retropie/configs/all
+```
