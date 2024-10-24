@@ -321,9 +321,11 @@ function apply_common_modifications_on_SD () {
   filename="${BOOT_DIRECTORY}/config.txt"
   trace "## Apply modifications to ${filename}"
 
-  # uncomment "disable_overscan=1"
-  trace "uncomment disable_overscan=1"
-  sudo sed -i '0,/#disable_overscan/ s//disable_overscan/' "${filename}"
+  if [[ "${specific_console}" != "pacman_GameStoryVersailles" ]]; then
+    # uncomment "disable_overscan=1"
+    trace "uncomment disable_overscan=1"
+    sudo sed -i '0,/#disable_overscan/ s//disable_overscan/' "${filename}"
+  fi
 
   #     Special config for borne arcade1Up with a slight zoom neede
   if [[ "${specific_console}" == "borne_arcade_1_up" ]]; then
@@ -354,6 +356,30 @@ function apply_common_modifications_on_SD () {
   # disable warnings such as undervoltage/overheating
   trace "add avoid_warnings=1"
   sudo sed -i '$aavoid_warnings=1' "${filename}"
+
+  #     Special config for borne Rene Pierre with a 270° orientation
+  if [[ "${specific_console}" == "borne_rene_pierre" ]]; then
+    trace "add display_rotate=1"
+    sudo sed -i '$adisplay_rotate=1' "${filename}"
+
+    # select 800x600 4:3
+    trace "add hdmi_group=2"
+    sudo sed -i '$ahdmi_group=2' "${filename}"
+    trace "add hdmi_mode=9"
+    sudo sed -i '$ahdmi_mode=9' "${filename}"
+  fi
+  
+  #     Special config for simulation borne pacman in GameStory Versailles
+  if [[ "${specific_console}" == "pacman_GameStoryVersailles" ]]; then
+    trace "add enable_tvout=1"
+    sudo sed -i '$aenable_tvout=1' "${filename}"
+
+    # select PAL 4:3
+    trace "add sdtv_mode=2 for PAL"
+    sudo sed -i '$asdtv_mode=2' "${filename}"
+    trace "add sdtv_aspect=1 for 4:3"
+    sudo sed -i '$asdtv_aspect=1' "${filename}"
+  fi
 
   #
   # retropie/opt/retropie/configs/all/runcommand.cfg
@@ -439,6 +465,14 @@ function apply_common_modifications_on_SD () {
 
   #     Special config for borne arcade1Up with use of jack output instead of HDMI
   if [[ "${specific_console}" == "borne_arcade_1_up" ]]; then
+    trace "add 'pcm.!default {type hw card 1}' in file ${filename}"
+    echo "pcm.!default {type hw card 1}" | sudo tee "${filename}"
+    trace "add 'ctl.!default {type hw card 1}' in file ${filename}"
+    echo "ctl.!default {type hw card 1}" | sudo tee --append "${filename}"
+  fi
+
+  #     Special config for borne Rene Pierre with use of jack output instead of HDMI
+  if [[ "${specific_console}" == "borne_rene_pierre" ]]; then
     trace "add 'pcm.!default {type hw card 1}' in file ${filename}"
     echo "pcm.!default {type hw card 1}" | sudo tee "${filename}"
     trace "add 'ctl.!default {type hw card 1}' in file ${filename}"
