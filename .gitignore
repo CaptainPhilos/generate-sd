@@ -3,6 +3,7 @@ source/launch-game/__pycache__
 *.log
 *.img.zip
 *.img
+*.img.gz
 tools/
 .vscode/
 source/packer-generation/packer_cache/
